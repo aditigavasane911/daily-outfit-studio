@@ -10,33 +10,129 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedClosetRouteImport } from './routes/_authenticated/closet'
+import { Route as AuthenticatedOutfitsRouteImport } from './routes/_authenticated/outfits'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedClosetIndexRouteImport } from './routes/_authenticated/closet.index'
+import { Route as AuthenticatedClosetIdRouteImport } from './routes/_authenticated/closet.$id'
+import { Route as AuthenticatedClosetAddRouteImport } from './routes/_authenticated/closet.add'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedClosetRoute = AuthenticatedClosetRouteImport.update({
+  id: '/closet',
+  path: '/closet',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOutfitsRoute = AuthenticatedOutfitsRouteImport.update({
+  id: '/outfits',
+  path: '/outfits',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClosetIndexRoute =
+  AuthenticatedClosetIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedClosetRoute,
+  } as any)
+const AuthenticatedClosetIdRoute = AuthenticatedClosetIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedClosetRoute,
+} as any)
+const AuthenticatedClosetAddRoute = AuthenticatedClosetAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => AuthenticatedClosetRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/closet': typeof AuthenticatedClosetRouteWithChildren
+  '/outfits': typeof AuthenticatedOutfitsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/closet/$id': typeof AuthenticatedClosetIdRoute
+  '/closet/add': typeof AuthenticatedClosetAddRoute
+  '/closet/': typeof AuthenticatedClosetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/outfits': typeof AuthenticatedOutfitsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/closet/$id': typeof AuthenticatedClosetIdRoute
+  '/closet/add': typeof AuthenticatedClosetAddRoute
+  '/closet': typeof AuthenticatedClosetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/closet': typeof AuthenticatedClosetRouteWithChildren
+  '/_authenticated/outfits': typeof AuthenticatedOutfitsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/closet/$id': typeof AuthenticatedClosetIdRoute
+  '/_authenticated/closet/add': typeof AuthenticatedClosetAddRoute
+  '/_authenticated/closet/': typeof AuthenticatedClosetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/closet'
+    | '/outfits'
+    | '/settings'
+    | '/closet/$id'
+    | '/closet/add'
+    | '/closet/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/outfits'
+    | '/settings'
+    | '/closet/$id'
+    | '/closet/add'
+    | '/closet'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/closet'
+    | '/_authenticated/outfits'
+    | '/_authenticated/settings'
+    | '/_authenticated/closet/$id'
+    | '/_authenticated/closet/add'
+    | '/_authenticated/closet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +144,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/closet': {
+      id: '/_authenticated/closet'
+      path: '/closet'
+      fullPath: '/closet'
+      preLoaderRoute: typeof AuthenticatedClosetRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outfits': {
+      id: '/_authenticated/outfits'
+      path: '/outfits'
+      fullPath: '/outfits'
+      preLoaderRoute: typeof AuthenticatedOutfitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/closet/': {
+      id: '/_authenticated/closet/'
+      path: '/'
+      fullPath: '/closet/'
+      preLoaderRoute: typeof AuthenticatedClosetIndexRouteImport
+      parentRoute: typeof AuthenticatedClosetRoute
+    }
+    '/_authenticated/closet/$id': {
+      id: '/_authenticated/closet/$id'
+      path: '/$id'
+      fullPath: '/closet/$id'
+      preLoaderRoute: typeof AuthenticatedClosetIdRouteImport
+      parentRoute: typeof AuthenticatedClosetRoute
+    }
+    '/_authenticated/closet/add': {
+      id: '/_authenticated/closet/add'
+      path: '/add'
+      fullPath: '/closet/add'
+      preLoaderRoute: typeof AuthenticatedClosetAddRouteImport
+      parentRoute: typeof AuthenticatedClosetRoute
+    }
   }
 }
 
+interface AuthenticatedClosetRouteChildren {
+  AuthenticatedClosetIdRoute: typeof AuthenticatedClosetIdRoute
+  AuthenticatedClosetAddRoute: typeof AuthenticatedClosetAddRoute
+  AuthenticatedClosetIndexRoute: typeof AuthenticatedClosetIndexRoute
+}
+
+const AuthenticatedClosetRouteChildren: AuthenticatedClosetRouteChildren = {
+  AuthenticatedClosetIdRoute: AuthenticatedClosetIdRoute,
+  AuthenticatedClosetAddRoute: AuthenticatedClosetAddRoute,
+  AuthenticatedClosetIndexRoute: AuthenticatedClosetIndexRoute,
+}
+
+const AuthenticatedClosetRouteWithChildren =
+  AuthenticatedClosetRoute._addFileChildren(AuthenticatedClosetRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClosetRoute: typeof AuthenticatedClosetRouteWithChildren
+  AuthenticatedOutfitsRoute: typeof AuthenticatedOutfitsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClosetRoute: AuthenticatedClosetRouteWithChildren,
+  AuthenticatedOutfitsRoute: AuthenticatedOutfitsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
