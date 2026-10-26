@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ImageIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { CATEGORY_LABELS, colorDef, type Garment } from "@/lib/closet-store";
 import { cn } from "@/lib/utils";
 
