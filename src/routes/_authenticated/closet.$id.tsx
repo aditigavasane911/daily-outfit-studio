@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Heart, Trash2 } from "lucide-react";
+import { ArrowLeft, Heart, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ItemCard } from "@/components/closet/ItemCard";
 import {
@@ -12,6 +12,9 @@ import {
 } from "@/lib/closet-store";
 
 export const Route = createFileRoute("/_authenticated/closet/$id")({
+  head: () => ({
+    meta: [{ title: "Piece Details — Rewear Radar" }],
+  }),
   component: PieceDetail,
 });
 
@@ -24,7 +27,9 @@ function PieceDetail() {
   if (!item) {
     return (
       <div className="grain-card mx-auto max-w-md rounded-2xl p-10 text-center">
-        <h1 className="font-display text-xl font-semibold">This piece is no longer in your closet</h1>
+        <h1 className="font-display text-xl font-semibold">
+          This piece is no longer in your closet
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">It may have been removed.</p>
         <Link
           to="/closet"
@@ -128,14 +133,24 @@ function PieceDetail() {
         </p>
         {pairs.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Add more pieces — tops, bottoms, shoes or a jacket — and Drape will start pairing them with this one.
+            Add more pieces — tops, bottoms, shoes or a jacket — and Rewear Radar will start pairing them
+            with this one.
           </p>
         ) : (
           <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {pairs.map(({ piece, note }) => (
               <div key={piece.id} className="space-y-2">
                 <ItemCard item={piece} />
-                <p className="px-1 text-xs leading-snug text-muted-foreground">{note}</p>
+                <p className="px-1 text-xs leading-snug text-muted-foreground">
+                  {note.startsWith("Studio Palette harmony") ? (
+                    <span className="flex items-center gap-1 font-medium text-foreground">
+                      <Sparkles className="size-3 text-accent shrink-0" />
+                      {note}
+                    </span>
+                  ) : (
+                    note
+                  )}
+                </p>
               </div>
             ))}
           </div>

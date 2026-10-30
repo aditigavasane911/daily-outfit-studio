@@ -51,7 +51,10 @@ export function ItemCard({
             className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-card/85 shadow-sm backdrop-blur transition-transform active:scale-90"
           >
             <Heart
-              className={cn("size-4", item.favorite ? "fill-accent text-accent" : "text-muted-foreground")}
+              className={cn(
+                "size-4",
+                item.favorite ? "fill-accent text-accent" : "text-muted-foreground",
+              )}
             />
           </button>
         )}
@@ -60,9 +63,17 @@ export function ItemCard({
         <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
           {CATEGORY_LABELS[item.category]}
         </p>
-        <h3 className="font-display text-base font-semibold leading-snug text-foreground">{item.name}</h3>
+        <h3 className="font-display text-base font-semibold leading-snug text-foreground">
+          {item.name}
+        </h3>
         <div className="flex flex-wrap gap-1.5 pt-0.5">
-          <Chip>{item.colorName}</Chip>
+          <Chip>
+            <span
+              className="mr-1 inline-block size-2.5 shrink-0 rounded-full border border-black/15 shadow-2xs"
+              style={{ backgroundColor: swatch.hex }}
+            />
+            {item.colorName}
+          </Chip>
           <Chip>Size {item.size}</Chip>
           <Chip>{item.formality}</Chip>
         </div>

@@ -2,11 +2,16 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Drape design system — warm editorial wardrobe.
- * Ivory paper, charcoal ink, muted sage + terracotta accents.
+ * Rewear Radar design system — Styled with the 10-pair studio color palette.
+ * Canvas: Warm Sand (#FAF7F2 / #F4E1C1)
+ * Signature: Midnight Spruce (#165B6D) & Emerald (#199E72)
+ * Warm Accent: Flame Terracotta (#EF5835) & Golden Amber (#E29F17)
+ * Coral/Sunrise: (#EF564B) & Buttercream (#F7EE9F)
+ * Midnight Luxury: Deep Plum (#5E3C66) & Petrol Teal (#257C93)
+ * Electric Alert: Crimson Red (#EA2F4A) & Ice Blue (#D2ECF9)
  */
 
 @theme inline {
@@ -40,47 +45,50 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.972 0.011 88);
-  --foreground: oklch(0.243 0.017 75);
-  --card: oklch(0.992 0.005 90);
-  --card-foreground: oklch(0.243 0.017 75);
-  --popover: oklch(0.992 0.005 90);
-  --popover-foreground: oklch(0.243 0.017 75);
-  --primary: oklch(0.523 0.055 135);
-  --primary-foreground: oklch(0.982 0.008 90);
-  --secondary: oklch(0.928 0.018 92);
-  --secondary-foreground: oklch(0.318 0.024 82);
-  --muted: oklch(0.934 0.014 92);
-  --muted-foreground: oklch(0.516 0.021 82);
-  --accent: oklch(0.663 0.098 52);
-  --accent-foreground: oklch(0.99 0.005 90);
-  --destructive: oklch(0.577 0.215 27.325);
-  --destructive-foreground: oklch(0.985 0.005 90);
-  --border: oklch(0.885 0.019 88);
-  --input: oklch(0.885 0.019 88);
-  --ring: oklch(0.523 0.055 135);
+
+  /* Palette Light Mode */
+  --background: #FAF8F5;
+  --foreground: #182629;
+  --card: #FFFFFF;
+  --card-foreground: #182629;
+  --popover: #FFFFFF;
+  --popover-foreground: #182629;
+  --primary: #165B6D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4E1C1;
+  --secondary-foreground: #165B6D;
+  --muted: #EFE9DF;
+  --muted-foreground: #5A6E72;
+  --accent: #EF5835;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EA2F4A;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5DDD1;
+  --input: #E5DDD1;
+  --ring: #165B6D;
 }
 
 .dark {
-  --background: oklch(0.218 0.014 80);
-  --foreground: oklch(0.945 0.011 88);
-  --card: oklch(0.263 0.017 80);
-  --card-foreground: oklch(0.945 0.011 88);
-  --popover: oklch(0.263 0.017 80);
-  --popover-foreground: oklch(0.945 0.011 88);
-  --primary: oklch(0.718 0.065 135);
-  --primary-foreground: oklch(0.218 0.014 80);
-  --secondary: oklch(0.318 0.02 82);
-  --secondary-foreground: oklch(0.945 0.011 88);
-  --muted: oklch(0.318 0.02 82);
-  --muted-foreground: oklch(0.68 0.018 84);
-  --accent: oklch(0.7 0.1 52);
-  --accent-foreground: oklch(0.218 0.014 80);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0.005 90);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.718 0.065 135);
+  /* Palette Dark Mode */
+  --background: #0C171A;
+  --foreground: #F5F1E8;
+  --card: #122125;
+  --card-foreground: #F5F1E8;
+  --popover: #122125;
+  --popover-foreground: #F5F1E8;
+  --primary: #199E72;
+  --primary-foreground: #081316;
+  --secondary: #1C2F34;
+  --secondary-foreground: #F5F1E8;
+  --muted: #18292E;
+  --muted-foreground: #8FA4A9;
+  --accent: #EF5835;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EA2F4A;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #199E72;
 }
 
 @layer base {
@@ -93,6 +101,7 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 }
 
@@ -107,7 +116,15 @@
 @utility grain-card {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 2px oklch(0.3 0.02 75 / 0.04), 0 8px 24px -16px oklch(0.3 0.02 75 / 0.12);
+  box-shadow:
+    0 1px 3px rgba(22, 91, 109, 0.04),
+    0 8px 24px -12px rgba(22, 91, 109, 0.08);
+}
+
+:where(.dark, .dark *) .grain-card {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.25),
+    0 8px 24px -12px rgba(0, 0, 0, 0.45);
 }
 
 @utility lift {
@@ -116,6 +133,63 @@
     box-shadow 0.25s ease;
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 32px -12px oklch(0.3 0.02 75 / 0.2);
+    box-shadow: 0 12px 32px -12px rgba(22, 91, 109, 0.16);
   }
+}
+
+:where(.dark, .dark *) .lift:hover {
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Micro-transitions when switching between light and dark */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, fill 0.25s ease, stroke 0.25s ease !important;
+  transition-delay: 0s !important;
+}
+
+
+/* Palette-Driven Button & Card Gradients */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(135deg, #165B6D 0%, #199E72 100%);
+}
+
+@utility bg-accent-gradient {
+  background-image: linear-gradient(135deg, #EF5835 0%, #E29F17 100%);
+}
+
+@utility bg-sunset-gradient {
+  background-image: linear-gradient(135deg, #EF564B 0%, #F7EE9F 100%);
+}
+
+@utility bg-plum-gradient {
+  background-image: linear-gradient(135deg, #5E3C66 0%, #257C93 100%);
+}
+
+@utility bg-ocean-gradient {
+  background-image: linear-gradient(135deg, #57ABAD 0%, #DDF4BA 100%);
+}
+
+@utility bg-sage-sand-gradient {
+  background-image: linear-gradient(135deg, #73A879 0%, #F4E1C1 100%);
+}
+
+@utility bg-crimson-gradient {
+  background-image: linear-gradient(135deg, #EA2F4A 0%, #D2ECF9 100%);
+}
+
+@utility text-gradient-brand {
+  background-image: linear-gradient(135deg, #165B6D 0%, #199E72 60%, #257C93 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility text-gradient-accent {
+  background-image: linear-gradient(135deg, #EF5835 0%, #E29F17 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

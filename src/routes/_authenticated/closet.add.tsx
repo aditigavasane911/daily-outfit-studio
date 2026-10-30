@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { ArrowLeft, Camera, X } from "lucide-react";
+import { ArrowLeft, Camera, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   addItem,
   CATEGORY_LABELS,
   COLOR_PRESETS,
+  STUDIO_PALETTES,
   fileToDataUrl,
   type Category,
   type Formality,
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/closet/add")({
   head: () => ({
-    meta: [{ title: "Add a piece — Drape" }],
+    meta: [{ title: "Add a piece — Rewear Radar" }],
   }),
   component: AddPiece,
 });
@@ -72,7 +73,7 @@ function AddPiece() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <button
         onClick={() => navigate({ to: "/closet" })}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -81,9 +82,11 @@ function AddPiece() {
       </button>
 
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Add a piece</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          Add a piece
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          A photo helps, but the details are what power your match-ups.
+          A photo helps, but chromatic and formal details power your Rewear Radar match-ups.
         </p>
       </div>
 
@@ -105,7 +108,7 @@ function AddPiece() {
             onClick={() => fileRef.current?.click()}
             className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-input bg-secondary/50 py-8 text-sm text-muted-foreground transition-colors hover:bg-secondary"
           >
-            <Camera className="size-6" strokeWidth={1.5} />
+            <Camera className="size-6 text-primary" strokeWidth={1.5} />
             {busy ? "Processing photo…" : "Add a photo (optional)"}
           </button>
         )}
@@ -124,7 +127,7 @@ function AddPiece() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Oatmeal crewneck sweater"
+            placeholder="e.g. Midnight spruce utility jacket"
             className={inputCls}
           />
         </Field>
@@ -144,7 +147,7 @@ function AddPiece() {
           </div>
         </Field>
 
-        <Field label="Colour">
+        <Field label="Color Selection">
           <div className="flex flex-wrap gap-2">
             {COLOR_PRESETS.map((c) => (
               <button
@@ -154,12 +157,14 @@ function AddPiece() {
                 aria-label={c.name}
                 aria-pressed={colorName === c.name}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-xs transition-colors",
-                  colorName === c.name ? "border-primary bg-secondary" : "border-input",
+                  "flex items-center gap-1.5 rounded-full border py-1.5 pl-1.5 pr-3 text-xs font-medium transition-all",
+                  colorName === c.name
+                    ? "bg-primary text-primary-foreground border-transparent shadow-xs font-semibold"
+                    : "border-input bg-card text-foreground hover:bg-secondary hover:border-primary/40",
                 )}
               >
                 <span
-                  className="size-5 rounded-full border border-black/10"
+                  className="size-4.5 rounded-full border border-black/15 shadow-2xs"
                   style={{ backgroundColor: c.hex }}
                 />
                 {c.name}
@@ -170,13 +175,28 @@ function AddPiece() {
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Size">
-            <input value={size} onChange={(e) => setSize(e.target.value)} placeholder="M" className={inputCls} />
+            <input
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              placeholder="M"
+              className={inputCls}
+            />
           </Field>
           <Field label="Brand (optional)">
-            <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Arket" className={inputCls} />
+            <input
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="Arket"
+              className={inputCls}
+            />
           </Field>
           <Field label="Fabric (optional)">
-            <input value={fabric} onChange={(e) => setFabric(e.target.value)} placeholder="Linen" className={inputCls} />
+            <input
+              value={fabric}
+              onChange={(e) => setFabric(e.target.value)}
+              placeholder="Linen"
+              className={inputCls}
+            />
           </Field>
         </div>
 
@@ -201,7 +221,12 @@ function AddPiece() {
         <Field label="How dressy is it?">
           <div className="flex flex-wrap gap-2">
             {FORMALITIES.map((f) => (
-              <button key={f} type="button" onClick={() => setFormality(f)} className={pillCls(formality === f)}>
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFormality(f)}
+                className={pillCls(formality === f)}
+              >
                 {f}
               </button>
             ))}
@@ -225,13 +250,17 @@ const inputCls =
 const pillCls = (on: boolean) =>
   cn(
     "rounded-full border px-4 py-1.5 text-sm font-medium capitalize transition-colors",
-    on ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
+    on
+      ? "border-primary bg-primary text-primary-foreground"
+      : "border-input bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
   );
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );

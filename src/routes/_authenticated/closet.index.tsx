@@ -16,41 +16,42 @@ function ClosetGrid() {
   const tabs: (Category | "all")[] = ["all", ...(Object.keys(CATEGORY_LABELS) as Category[])];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
-          const count = tab === "all" ? items.length : items.filter((i) => i.category === tab).length;
+          const count =
+            tab === "all" ? items.length : items.filter((i) => i.category === tab).length;
           return (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
                 filter === tab
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "bg-brand-gradient text-white border-transparent shadow-xs font-semibold"
                   : "border-input bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
-              {tab === "all" ? "All" : CATEGORY_LABELS[tab]}
-              <span className="ml-1.5 opacity-60">{count}</span>
+              {tab === "all" ? "All pieces" : CATEGORY_LABELS[tab]}
+              <span className="ml-1.5 opacity-70">({count})</span>
             </button>
           );
         })}
       </div>
 
       {visible.length === 0 ? (
-        <div className="grain-card rounded-2xl p-10 text-center">
-          <h2 className="font-display text-xl font-semibold">
-            {items.length === 0 ? "Your closet is empty" : "Nothing in this category yet"}
+        <div className="grain-card rounded-2xl p-12 text-center">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            {items.length === 0 ? "Your Rewear Radar closet is empty" : "Nothing in this category yet"}
           </h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             {items.length === 0
-              ? "Add your first pieces — a top, a bottom and shoes are enough to start getting match-ups."
-              : "Add a piece in this category and Drape will start pairing it for you."}
+              ? "Add your first pieces — a top, a bottom, and shoes are enough to start generating intelligent match-ups."
+              : "Add a piece in this category and Rewear Radar will automatically compute harmonies and combinations."}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
           {visible.map((item) => (
             <ItemCard key={item.id} item={item} onToggleFavorite={toggleFavorite} />
           ))}
