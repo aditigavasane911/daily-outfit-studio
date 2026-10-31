@@ -15,7 +15,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { reportError } from "../lib/error-reporting";
 import { ThemeProvider, THEME_STORAGE_KEY } from "@/lib/theme-provider";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -44,7 +43,6 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   useEffect(() => {
     reportError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -163,4 +161,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

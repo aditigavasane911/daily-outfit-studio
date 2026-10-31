@@ -39,9 +39,7 @@ export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) 
         />
       </div>
       {showLabel && (
-        <span className="ml-2 text-xs font-medium capitalize">
-          {isDark ? "Dark" : "Light"}
-        </span>
+        <span className="ml-2 text-xs font-medium capitalize">{isDark ? "Dark" : "Light"}</span>
       )}
     </button>
   );
@@ -50,7 +48,13 @@ export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) 
 export function ThemeSelector({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
-  const options: { value: Theme; label: string; icon: typeof Sun; desc: string; previewBadge: string }[] = [
+  const options: {
+    value: Theme;
+    label: string;
+    icon: typeof Sun;
+    desc: string;
+    previewBadge: string;
+  }[] = [
     {
       value: "light",
       label: "Light Theme",

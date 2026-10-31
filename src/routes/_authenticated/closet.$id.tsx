@@ -88,9 +88,20 @@ function PieceDetail() {
 
         <div className="space-y-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              {CATEGORY_LABELS[item.category]}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                {CATEGORY_LABELS[item.category]}
+              </p>
+              {item.id.startsWith("seed-") ? (
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground border border-border">
+                  Demo Preset
+                </span>
+              ) : (
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Custom Piece
+                </span>
+              )}
+            </div>
             <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">{item.name}</h1>
             {item.brand && <p className="mt-1 text-sm text-muted-foreground">{item.brand}</p>}
           </div>
@@ -109,7 +120,10 @@ function PieceDetail() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => toggleFavorite(item.id)}
+              onClick={() => {
+                toggleFavorite(item.id);
+                toast(item.favorite ? "Removed from favourites." : "Added to favourites.");
+              }}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-input py-3 text-sm font-medium transition-colors hover:bg-secondary"
             >
               <Heart className={item.favorite ? "size-4 fill-accent text-accent" : "size-4"} />
@@ -133,8 +147,8 @@ function PieceDetail() {
         </p>
         {pairs.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Add more pieces — tops, bottoms, shoes or a jacket — and Rewear Radar will start pairing them
-            with this one.
+            Add more pieces — tops, bottoms, shoes or a jacket — and Rewear Radar will start pairing
+            them with this one.
           </p>
         ) : (
           <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

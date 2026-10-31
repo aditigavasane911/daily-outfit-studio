@@ -16,16 +16,16 @@ export interface AiOutfitRecommendation {
 
 export interface OllamaModelInfo {
   name: string;
-  size?: number;
-  digest?: string;
-  modifiedAt?: string;
+  size?: number | undefined;
+  digest?: string | undefined;
+  modifiedAt?: string | undefined;
 }
 
 export interface OllamaStatus {
   connected: boolean;
   models: OllamaModelInfo[];
   endpoint: string;
-  error?: string;
+  error?: string | undefined;
 }
 
 const AI_CONFIG_KEY = "rewear_radar:ai_config";
@@ -90,8 +90,15 @@ export async function checkOllamaConnection(customEndpoint?: string): Promise<Ol
       });
 
       if (res.ok) {
-        const data = await res.json();
-        const models: OllamaModelInfo[] = (data.models || []).map((m: any) => ({
+        const data = (await res.json()) as {
+          models?: Array<{
+            name: string;
+            size?: number;
+            digest?: string;
+            modified_at?: string;
+          }>;
+        };
+        const models: OllamaModelInfo[] = (data.models || []).map((m) => ({
           name: m.name,
           size: m.size,
           digest: m.digest,
@@ -118,11 +125,11 @@ export async function checkOllamaConnection(customEndpoint?: string): Promise<Ol
 
 export interface GenerateOutfitParams {
   items: Garment[];
-  profile?: Profile;
+  profile?: Profile | undefined;
   occasion: string;
-  season?: Season | "any";
-  customPrompt?: string;
-  settings?: AiSettings;
+  season?: Season | "any" | undefined;
+  customPrompt?: string | undefined;
+  settings?: AiSettings | undefined;
 }
 
 /**
@@ -250,16 +257,14 @@ Output ONLY the JSON object.`;
         provider: "ollama",
         createdAt: Date.now(),
       };
-    } catch (err: any) {
-      lastError = err;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
   throw (
     lastError ||
-    new Error(
-      "Unable to connect to Ollama. Make sure Ollama is running locally (`ollama serve`).",
-    )
+    new Error("Unable to connect to Ollama. Make sure Ollama is running locally (`ollama serve`).")
   );
 }
 
@@ -356,14 +361,24 @@ function parseAiResponse(
     cleaned = cleaned.replace(/^```\s*/, "").replace(/```\s*$/, "");
   }
 
-  let obj: any;
+  interface RawAiOutput {
+    title?: string;
+    vibe?: string;
+    selectedPieceIds?: unknown;
+    whyItWorks?: string;
+    colorHarmony?: string;
+    layeringTips?: unknown;
+    accessoryIdeas?: unknown;
+  }
+
+  let obj: RawAiOutput;
   try {
-    obj = JSON.parse(cleaned);
+    obj = JSON.parse(cleaned) as RawAiOutput;
   } catch {
     // Attempt relaxed regex extraction
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) {
-      obj = JSON.parse(match[0]);
+      obj = JSON.parse(match[0]) as RawAiOutput;
     } else {
       throw new Error("Could not parse AI response as JSON.");
     }
@@ -371,7 +386,9 @@ function parseAiResponse(
 
   const validIds = new Set(closetItems.map((i) => i.id));
   let selectedPieceIds: string[] = Array.isArray(obj.selectedPieceIds)
-    ? obj.selectedPieceIds.filter((id: string) => validIds.has(id))
+    ? (obj.selectedPieceIds.filter(
+        (id): id is string => typeof id === "string" && validIds.has(id),
+      ) as string[])
     : [];
 
   // Fallback if AI selected names or invalid IDs

@@ -3,6 +3,21 @@ import knitImg from "@/assets/garment-knit.png";
 import jacketImg from "@/assets/garment-jacket.png";
 import trousersImg from "@/assets/garment-trousers.png";
 import shirtImg from "@/assets/garment-shirt.png";
+import {
+  isSupabaseConfigured,
+  supabase,
+  fetchUserGarments,
+  insertDbGarment,
+  deleteDbGarment,
+  updateDbGarmentFavorite,
+  fetchDbProfile,
+  updateDbProfile,
+  signOutUser,
+  fetchSavedOutfits,
+  saveDbOutfit,
+  deleteDbOutfit,
+  hasActiveSupabaseAuth,
+} from "./supabase";
 
 /* ---------------- Types ---------------- */
 
@@ -464,7 +479,6 @@ function getItems(): Garment[] {
   return items;
 }
 
-
 function setItems(next: Garment[]) {
   items = next;
   save(ITEMS_KEY, next);
@@ -477,22 +491,50 @@ export function subscribeCloset(listener: () => void) {
 }
 
 export function addItem(input: Omit<Garment, "id" | "favorite" | "createdAt">): Garment {
+  const tempId = `item-${Date.now()}-${Math.floor(Math.random() * 1e4)}`;
   const garment: Garment = {
     ...input,
-    id: `item-${Date.now()}-${Math.floor(Math.random() * 1e4)}`,
+    id: tempId,
     favorite: false,
     createdAt: Date.now(),
   };
   setItems([garment, ...getItems()]);
+
+  // If connected to Supabase and authenticated, persist to PostgreSQL
+  if (isSupabaseConfigured && session?.isSupabase) {
+    insertDbGarment(input)
+      .then((createdDbGarment) => {
+        // Swap temp ID with the PostgreSQL UUID
+        items = getItems().map((g) => (g.id === tempId ? createdDbGarment : g));
+        save(ITEMS_KEY, items);
+        listeners.forEach((l) => l());
+      })
+      .catch((err) => {
+        console.error("Failed to persist garment to Supabase PostgreSQL:", err);
+      });
+  }
+
   return garment;
 }
 
 export function removeItem(id: string) {
   setItems(getItems().filter((g) => g.id !== id));
+  if (isSupabaseConfigured && session?.isSupabase && !id.startsWith("seed-")) {
+    deleteDbGarment(id).catch((err) => {
+      console.error("Failed to delete garment from Supabase PostgreSQL:", err);
+    });
+  }
 }
 
 export function toggleFavorite(id: string) {
+  const current = getItems().find((g) => g.id === id);
+  const nextFav = current ? !current.favorite : false;
   setItems(getItems().map((g) => (g.id === id ? { ...g, favorite: !g.favorite } : g)));
+  if (isSupabaseConfigured && session?.isSupabase && !id.startsWith("seed-")) {
+    updateDbGarmentFavorite(id, nextFav).catch((err) => {
+      console.error("Failed to update favorite in Supabase PostgreSQL:", err);
+    });
+  }
 }
 
 export function useCloset(): Garment[] {
@@ -531,6 +573,11 @@ export function updateProfile(patch: Partial<Profile>) {
   profile = { ...getProfile(), ...patch };
   save(PROFILE_KEY, profile);
   profileListeners.forEach((l) => l());
+  if (isSupabaseConfigured && session?.isSupabase) {
+    updateDbProfile(patch).catch((err) => {
+      console.error("Failed to update profile in Supabase PostgreSQL:", err);
+    });
+  }
 }
 
 export function subscribeProfile(listener: () => void) {
@@ -542,11 +589,13 @@ export function useProfile(): Profile {
   return useSyncExternalStore(subscribeProfile, getProfile, () => DEFAULT_PROFILE);
 }
 
-/* ---------------- Mock session (UI phase) ---------------- */
+/* ---------------- Session (Supabase Auth + Mock Fallback) ---------------- */
 
 export interface Session {
   email: string;
   name: string;
+  id?: string;
+  isSupabase?: boolean;
 }
 
 let session: Session | null | undefined;
@@ -561,28 +610,35 @@ export function hasSession(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const raw = localStorage.getItem(SESSION_KEY) ?? localStorage.getItem("drape:session");
-    if (!raw || raw === "null" || raw === "undefined") return false;
-    const parsed = JSON.parse(raw) as Partial<Session> | null;
-    return Boolean(parsed && typeof parsed === "object" && parsed.email);
+    if (raw && raw !== "null" && raw !== "undefined") {
+      const parsed = JSON.parse(raw) as Partial<Session> | null;
+      if (parsed && typeof parsed === "object" && parsed.email) return true;
+    }
+    return hasActiveSupabaseAuth();
   } catch {
     return false;
   }
 }
 
-export function signIn(email?: string, name?: string) {
+export function signIn(email?: string, name?: string, isSupabase = false, id?: string) {
   const cleanEmail = email?.trim() || "demo@rewearradar.com";
   const defaultName = cleanEmail.includes("@")
     ? (cleanEmail.split("@")[0]?.replace(/[._]/g, " ") ?? "Demo Stylist")
     : cleanEmail;
   session = {
+    id,
     email: cleanEmail,
     name: name?.trim() || defaultName || "Demo Stylist",
+    isSupabase,
   };
   save(SESSION_KEY, session);
   sessionListeners.forEach((l) => l());
 }
 
 export function signOut() {
+  if (isSupabaseConfigured && session?.isSupabase) {
+    signOutUser().catch(() => {});
+  }
   session = null;
   try {
     if (typeof window !== "undefined") {
@@ -602,6 +658,186 @@ export function subscribeSession(listener: () => void) {
 export function useSession(): Session | null {
   return useSyncExternalStore(subscribeSession, getSession, () => null);
 }
+
+/* ---------------- Saved Outfits Store ---------------- */
+
+const SAVED_OUTFITS_KEY = "rewear_radar:saved_outfits";
+
+export interface SavedOutfit {
+  id: string;
+  score: number;
+  reasons: string[];
+  matchedPaletteId?: number | null;
+  pieceIds: string[];
+  createdAt: number;
+}
+
+let savedOutfits: SavedOutfit[] | null = null;
+const savedOutfitsListeners = new Set<() => void>();
+
+function getSavedOutfits(): SavedOutfit[] {
+  if (savedOutfits === null) {
+    savedOutfits = load<SavedOutfit[]>(SAVED_OUTFITS_KEY, []);
+  }
+  return savedOutfits;
+}
+
+function setSavedOutfits(next: SavedOutfit[]) {
+  savedOutfits = next;
+  save(SAVED_OUTFITS_KEY, next);
+  savedOutfitsListeners.forEach((l) => l());
+}
+
+export function subscribeSavedOutfits(listener: () => void) {
+  savedOutfitsListeners.add(listener);
+  return () => savedOutfitsListeners.delete(listener);
+}
+
+export function useSavedOutfits(): SavedOutfit[] {
+  return useSyncExternalStore(subscribeSavedOutfits, getSavedOutfits, () => []);
+}
+
+export async function toggleSaveOutfit(outfit: Outfit): Promise<boolean> {
+  const current = getSavedOutfits();
+  const piecesKey = outfit.pieces.map((p) => p.id).join("+");
+  const existing = current.find(
+    (s) => s.id === outfit.id || s.pieceIds.join("+") === piecesKey,
+  );
+
+  if (existing) {
+    // Remove from saved
+    setSavedOutfits(current.filter((s) => s.id !== existing.id));
+    if (isSupabaseConfigured && session?.isSupabase && !existing.id.startsWith("local-")) {
+      deleteDbOutfit(existing.id).catch((err) => {
+        console.error("Failed to delete saved outfit in Supabase:", err);
+      });
+    }
+    return false; // Now unsaved
+  } else {
+    // Save outfit
+    const tempId = `local-${Date.now()}`;
+    const newSaved: SavedOutfit = {
+      id: tempId,
+      score: outfit.score,
+      reasons: outfit.reasons,
+      matchedPaletteId: outfit.matchedPalette?.id ?? null,
+      pieceIds: outfit.pieces.map((p) => p.id),
+      createdAt: Date.now(),
+    };
+    setSavedOutfits([newSaved, ...current]);
+
+    if (isSupabaseConfigured && session?.isSupabase) {
+      try {
+        const dbResult = await saveDbOutfit({
+          score: outfit.score,
+          reasons: outfit.reasons,
+          matchedPaletteId: outfit.matchedPalette?.id,
+          pieceIds: outfit.pieces.map((p) => p.id),
+        });
+        setSavedOutfits(
+          getSavedOutfits().map((s) =>
+            s.id === tempId ? { ...s, id: dbResult.id } : s,
+          ),
+        );
+      } catch (err) {
+        console.error("Failed to persist outfit to Supabase:", err);
+      }
+    }
+    return true; // Now saved
+  }
+}
+
+export function isOutfitSaved(outfitId: string, pieceIds?: string[]): boolean {
+  const current = getSavedOutfits();
+  const piecesKey = pieceIds ? pieceIds.join("+") : outfitId;
+  return current.some((s) => s.id === outfitId || s.pieceIds.join("+") === piecesKey);
+}
+
+/* ---------------- Supabase Real-time / Auth Sync ---------------- */
+
+let hasInitializedSync = false;
+
+export function initSupabaseSync() {
+  if (hasInitializedSync || typeof window === "undefined" || !isSupabaseConfigured) return;
+  hasInitializedSync = true;
+
+  supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    if (currentSession?.user) {
+      handleUserSession(currentSession.user);
+    }
+  });
+
+  supabase.auth.onAuthStateChange((event, currentSession) => {
+    if (currentSession?.user) {
+      handleUserSession(currentSession.user);
+    } else if (event === "SIGNED_OUT") {
+      session = null;
+      try {
+        localStorage.removeItem(SESSION_KEY);
+      } catch {}
+      items = SEED_ITEMS;
+      save(ITEMS_KEY, items);
+      sessionListeners.forEach((l) => l());
+      listeners.forEach((l) => l());
+    }
+  });
+}
+
+async function handleUserSession(user: { id: string; email?: string; user_metadata?: Record<string, any> }) {
+  const email = user.email || "";
+  const name =
+    (user.user_metadata?.full_name as string) ||
+    (user.user_metadata?.name as string) ||
+    email.split("@")[0] ||
+    "Stylist";
+
+  session = {
+    id: user.id,
+    email,
+    name,
+    isSupabase: true,
+  };
+  save(SESSION_KEY, session);
+  sessionListeners.forEach((l) => l());
+
+  try {
+    const dbGarments = await fetchUserGarments();
+    // Strictly preserve demo items: merge user's PostgreSQL items with SEED_ITEMS
+    const dbIds = new Set((dbGarments || []).map((g) => g.id));
+    const preservedDemos = SEED_ITEMS.filter((s) => !dbIds.has(s.id));
+    items = [...(dbGarments || []), ...preservedDemos];
+    save(ITEMS_KEY, items);
+    listeners.forEach((l) => l());
+
+    const dbProfile = await fetchDbProfile();
+    if (dbProfile) {
+      profile = { ...DEFAULT_PROFILE, ...dbProfile, name: dbProfile.name || name };
+      save(PROFILE_KEY, profile);
+      profileListeners.forEach((l) => l());
+    }
+
+    const dbOutfits = await fetchSavedOutfits();
+    if (dbOutfits && dbOutfits.length > 0) {
+      const mapped: SavedOutfit[] = dbOutfits.map((o) => ({
+        id: o.id,
+        score: Number(o.score),
+        reasons: o.reasons || [],
+        matchedPaletteId: o.matched_palette_id,
+        pieceIds: o.piece_ids || [],
+        createdAt: new Date(o.created_at).getTime(),
+      }));
+      setSavedOutfits(mapped);
+    }
+  } catch (err) {
+    console.error("Error syncing Supabase PostgreSQL data:", err);
+  }
+}
+
+// Auto-initialize when in browser environment
+if (typeof window !== "undefined") {
+  initSupabaseSync();
+}
+
 
 /* ---------------- Outfit matching engine ---------------- */
 
@@ -664,7 +900,11 @@ function seasonOverlap(a: Garment, b: Garment): Season[] {
   return b.seasons.filter((s) => set.has(s));
 }
 
-function composeScore(pieces: Garment[]): { score: number; reasons: string[]; matchedPalette?: StudioPalette } {
+function composeScore(pieces: Garment[]): {
+  score: number;
+  reasons: string[];
+  matchedPalette?: StudioPalette | undefined;
+} {
   let score = 0;
   const reasons: string[] = [];
   let matchedPalette: StudioPalette | undefined;
@@ -765,7 +1005,6 @@ export function pairWith(item: Garment, all: Garment[]): { piece: Garment; note:
     .slice(0, 4)
     .map(({ piece, note }) => ({ piece, note }));
 }
-
 
 /* ---------------- Photo downscaling for local persistence ---------------- */
 

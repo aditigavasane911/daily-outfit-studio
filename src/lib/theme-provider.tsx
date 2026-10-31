@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useMemo,
+  useCallback,
   type ReactNode,
 } from "react";
 
@@ -56,7 +57,7 @@ export function ThemeProvider({
   });
 
   // Apply theme to DOM
-  const applyTheme = (targetTheme: Theme) => {
+  const applyTheme = useCallback((targetTheme: Theme) => {
     if (typeof window === "undefined") return;
 
     const root = document.documentElement;
@@ -80,23 +81,26 @@ export function ThemeProvider({
     }, 280);
 
     return () => clearTimeout(timeout);
-  };
+  }, []);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch (e) {
-      console.warn("Failed to persist theme preference:", e);
-    }
-    applyTheme(newTheme);
-  };
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      setThemeState(newTheme);
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      } catch (e) {
+        console.warn("Failed to persist theme preference:", e);
+      }
+      applyTheme(newTheme);
+    },
+    [applyTheme],
+  );
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     // If currently dark, switch to light; if light, switch to dark
     const next = resolvedTheme === "dark" ? "light" : "dark";
     setTheme(next);
-  };
+  }, [resolvedTheme, setTheme]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -108,9 +112,12 @@ export function ThemeProvider({
       };
 
       mediaQuery.addEventListener("change", handler);
-      return () => mediaQuery.removeEventListener("change", handler);
+      return () => {
+        mediaQuery.removeEventListener("change", handler);
+      };
     }
-  }, [theme]);
+    return undefined;
+  }, [theme, applyTheme]);
 
   const value = useMemo(
     () => ({
@@ -119,12 +126,13 @@ export function ThemeProvider({
       setTheme,
       toggleTheme,
     }),
-    [theme, resolvedTheme],
+    [theme, resolvedTheme, setTheme, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {

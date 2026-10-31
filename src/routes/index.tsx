@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ScanLine, Sparkles, CalendarClock, Radio, RefreshCw, Layers, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  ScanLine,
+  Sparkles,
+  CalendarClock,
+  Radio,
+  RefreshCw,
+  Layers,
+  ShieldCheck,
+} from "lucide-react";
 import knitImg from "@/assets/garment-knit.png";
 import jacketImg from "@/assets/garment-jacket.png";
 import shirtImg from "@/assets/garment-shirt.png";
@@ -64,7 +73,9 @@ function Landing() {
     <div className="min-h-screen w-full bg-background text-foreground">
       {/* Top Banner */}
       <div className="w-full bg-brand-gradient py-2 px-4 text-center text-xs font-semibold tracking-wide text-white">
-        <span>✨ Rewear Radar · Unlock your wardrobe's fullest potential with intelligent color matching</span>
+        <span>
+          ✨ Rewear Radar · Unlock your wardrobe's fullest potential with intelligent color matching
+        </span>
       </div>
 
       {/* Header */}
@@ -123,7 +134,9 @@ function Landing() {
             </h1>
 
             <p className="max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground">
-              Rewear Radar turns your clothes into a high-resonance digital wardrobe. Get daily match-ups balanced by color harmony, formality, and season — reach for pieces you love, wear them more, and buy less.
+              Rewear Radar turns your clothes into a high-resonance digital wardrobe. Get daily
+              match-ups balanced by color harmony, formality, and season — reach for pieces you
+              love, wear them more, and buy less.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -227,7 +240,8 @@ function Landing() {
             A wardrobe radar, not a fast-fashion shop
           </h2>
           <p className="mt-3 max-w-3xl text-base text-muted-foreground">
-            Every feature is engineered to make rediscovering what you own satisfying, effortless, and creatively inspiring.
+            Every feature is engineered to make rediscovering what you own satisfying, effortless,
+            and creatively inspiring.
           </p>
         </div>
 
@@ -239,7 +253,9 @@ function Landing() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className={`flex size-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-xs`}>
+                  <span
+                    className={`flex size-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-xs`}
+                  >
                     <Icon className="size-5" strokeWidth={2} />
                   </span>
                   <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary-foreground">
@@ -249,9 +265,7 @@ function Landing() {
                 <h3 className="mt-5 font-display text-xl font-bold tracking-tight text-foreground">
                   {title}
                 </h3>
-                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-                  {body}
-                </p>
+                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
               </div>
 
               <div className="mt-6 pt-4 border-t border-border/60">
@@ -272,7 +286,8 @@ function Landing() {
               Ready to radar your wardrobe?
             </h2>
             <p className="text-base text-muted-foreground">
-              Start with just five pieces: a top, a bottom, and a pair of shoes. Rewear Radar immediately computes your color matches and styling combos.
+              Start with just five pieces: a top, a bottom, and a pair of shoes. Rewear Radar
+              immediately computes your color matches and styling combos.
             </p>
           </div>
           <Link

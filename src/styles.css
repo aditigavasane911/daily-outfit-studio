@@ -47,48 +47,48 @@
   --radius: 0.75rem;
 
   /* Palette Light Mode */
-  --background: #FAF8F5;
+  --background: #faf8f5;
   --foreground: #182629;
-  --card: #FFFFFF;
+  --card: #ffffff;
   --card-foreground: #182629;
-  --popover: #FFFFFF;
+  --popover: #ffffff;
   --popover-foreground: #182629;
-  --primary: #165B6D;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F4E1C1;
-  --secondary-foreground: #165B6D;
-  --muted: #EFE9DF;
-  --muted-foreground: #5A6E72;
-  --accent: #EF5835;
-  --accent-foreground: #FFFFFF;
-  --destructive: #EA2F4A;
-  --destructive-foreground: #FFFFFF;
-  --border: #E5DDD1;
-  --input: #E5DDD1;
-  --ring: #165B6D;
+  --primary: #165b6d;
+  --primary-foreground: #ffffff;
+  --secondary: #f4e1c1;
+  --secondary-foreground: #165b6d;
+  --muted: #efe9df;
+  --muted-foreground: #5a6e72;
+  --accent: #ef5835;
+  --accent-foreground: #ffffff;
+  --destructive: #ea2f4a;
+  --destructive-foreground: #ffffff;
+  --border: #e5ddd1;
+  --input: #e5ddd1;
+  --ring: #165b6d;
 }
 
 .dark {
   /* Palette Dark Mode */
-  --background: #0C171A;
-  --foreground: #F5F1E8;
+  --background: #0c171a;
+  --foreground: #f5f1e8;
   --card: #122125;
-  --card-foreground: #F5F1E8;
+  --card-foreground: #f5f1e8;
   --popover: #122125;
-  --popover-foreground: #F5F1E8;
-  --primary: #199E72;
+  --popover-foreground: #f5f1e8;
+  --primary: #199e72;
   --primary-foreground: #081316;
-  --secondary: #1C2F34;
-  --secondary-foreground: #F5F1E8;
-  --muted: #18292E;
-  --muted-foreground: #8FA4A9;
-  --accent: #EF5835;
-  --accent-foreground: #FFFFFF;
-  --destructive: #EA2F4A;
-  --destructive-foreground: #FFFFFF;
+  --secondary: #1c2f34;
+  --secondary-foreground: #f5f1e8;
+  --muted: #18292e;
+  --muted-foreground: #8fa4a9;
+  --accent: #ef5835;
+  --accent-foreground: #ffffff;
+  --destructive: #ea2f4a;
+  --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.16);
-  --ring: #199E72;
+  --ring: #199e72;
 }
 
 @layer base {
@@ -146,49 +146,53 @@ html.theme-transition,
 html.theme-transition *,
 html.theme-transition *::before,
 html.theme-transition *::after {
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, fill 0.25s ease, stroke 0.25s ease !important;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    fill 0.25s ease,
+    stroke 0.25s ease !important;
   transition-delay: 0s !important;
 }
 
-
 /* Palette-Driven Button & Card Gradients */
 @utility bg-brand-gradient {
-  background-image: linear-gradient(135deg, #165B6D 0%, #199E72 100%);
+  background-image: linear-gradient(135deg, #165b6d 0%, #199e72 100%);
 }
 
 @utility bg-accent-gradient {
-  background-image: linear-gradient(135deg, #EF5835 0%, #E29F17 100%);
+  background-image: linear-gradient(135deg, #ef5835 0%, #e29f17 100%);
 }
 
 @utility bg-sunset-gradient {
-  background-image: linear-gradient(135deg, #EF564B 0%, #F7EE9F 100%);
+  background-image: linear-gradient(135deg, #ef564b 0%, #f7ee9f 100%);
 }
 
 @utility bg-plum-gradient {
-  background-image: linear-gradient(135deg, #5E3C66 0%, #257C93 100%);
+  background-image: linear-gradient(135deg, #5e3c66 0%, #257c93 100%);
 }
 
 @utility bg-ocean-gradient {
-  background-image: linear-gradient(135deg, #57ABAD 0%, #DDF4BA 100%);
+  background-image: linear-gradient(135deg, #57abad 0%, #ddf4ba 100%);
 }
 
 @utility bg-sage-sand-gradient {
-  background-image: linear-gradient(135deg, #73A879 0%, #F4E1C1 100%);
+  background-image: linear-gradient(135deg, #73a879 0%, #f4e1c1 100%);
 }
 
 @utility bg-crimson-gradient {
-  background-image: linear-gradient(135deg, #EA2F4A 0%, #D2ECF9 100%);
+  background-image: linear-gradient(135deg, #ea2f4a 0%, #d2ecf9 100%);
 }
 
 @utility text-gradient-brand {
-  background-image: linear-gradient(135deg, #165B6D 0%, #199E72 60%, #257C93 100%);
+  background-image: linear-gradient(135deg, #165b6d 0%, #199e72 60%, #257c93 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 @utility text-gradient-accent {
-  background-image: linear-gradient(135deg, #EF5835 0%, #E29F17 100%);
+  background-image: linear-gradient(135deg, #ef5835 0%, #e29f17 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

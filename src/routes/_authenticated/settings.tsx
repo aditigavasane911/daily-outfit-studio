@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { LogOut, Sparkles, Palette } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LogOut, Sparkles, Palette, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   COLOR_PRESETS,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/closet-store";
 import { ThemeSelector } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
-
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -33,10 +32,26 @@ function SettingsPage() {
   const [budget, setBudget] = useState(profile.budget);
   const [styleNote, setStyleNote] = useState(profile.styleNote);
   const [colors, setColors] = useState<string[]>(profile.favoriteColors);
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
-    updateProfile({ name, sizes, budget, styleNote, favoriteColors: colors });
-    toast.success("Preferences saved — Rewear Radar will use them from now on.");
+  useEffect(() => {
+    setName(profile.name);
+    setSizes(profile.sizes);
+    setBudget(profile.budget);
+    setStyleNote(profile.styleNote);
+    setColors(profile.favoriteColors);
+  }, [profile]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      updateProfile({ name, sizes, budget, styleNote, favoriteColors: colors });
+      toast.success("Preferences saved to your profile.");
+    } catch {
+      toast.error("Failed to save preferences.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -57,7 +72,9 @@ function SettingsPage() {
             <Palette className="size-4" />
           </span>
           <div>
-            <h2 className="font-display text-xl font-bold text-foreground">Theme & Studio Aesthetic</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Theme & Studio Aesthetic
+            </h2>
             <p className="text-xs text-muted-foreground">
               Choose your preferred Rewear Radar mode (Light Warm Sand or Dark Midnight Obsidian).
             </p>
@@ -136,15 +153,24 @@ function SettingsPage() {
 
         <button
           onClick={save}
-          className="rounded-full bg-brand-gradient px-8 py-3 text-sm font-semibold text-white shadow-xs transition-transform hover:opacity-95 active:scale-95"
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-8 py-3 text-sm font-semibold text-white shadow-xs transition-transform hover:opacity-95 active:scale-95 disabled:opacity-60"
         >
-          Save preferences
+          {saving && <Loader2 className="size-4 animate-spin" />}
+          {saving ? "Saving…" : "Save preferences"}
         </button>
       </section>
 
       <section className="grain-card flex items-center justify-between gap-4 rounded-2xl p-5 sm:p-6">
         <div>
-          <h2 className="font-display text-lg font-semibold">Signed in as</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg font-semibold">Signed in as</h2>
+            {session?.isSupabase && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <Sparkles className="size-3 text-emerald-500" /> Supabase PostgreSQL
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{session?.email}</p>
         </div>
         <button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Wand2,
   Sparkles,
@@ -58,7 +58,7 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [showConfig, setShowConfig] = useState(false);
 
-  const [occasion, setOccasion] = useState(OCCASIONS[0].label);
+  const [occasion, setOccasion] = useState(OCCASIONS[0]?.label ?? "Smart Coffee Meetup");
   const [customPrompt, setCustomPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentOutfit, setCurrentOutfit] = useState<AiOutfitRecommendation | null>(null);
@@ -71,12 +71,7 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
     }
   });
 
-  // Verify Ollama on mount
-  useEffect(() => {
-    refreshConnection();
-  }, []);
-
-  const refreshConnection = async () => {
+  const refreshConnection = useCallback(async () => {
     setCheckingStatus(true);
     try {
       const res = await checkOllamaConnection(settings.ollamaEndpoint);
@@ -84,7 +79,7 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
       // Auto-select first detected model if current selection isn't in list
       if (res.connected && res.models.length > 0) {
         const hasCurrent = res.models.some((m) => m.name === settings.ollamaModel);
-        if (!hasCurrent) {
+        if (!hasCurrent && res.models[0]) {
           const nextModel = res.models[0].name;
           const updated = saveAiSettings({ ollamaModel: nextModel });
           setSettings(updated);
@@ -100,7 +95,12 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
     } finally {
       setCheckingStatus(false);
     }
-  };
+  }, [settings.ollamaEndpoint, settings.ollamaModel]);
+
+  // Verify Ollama on mount
+  useEffect(() => {
+    refreshConnection();
+  }, [refreshConnection]);
 
   const handleGenerate = async () => {
     if (items.length < 2) {
@@ -124,9 +124,11 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
       setHistory(nextHistory);
       localStorage.setItem("rewear_radar:ai_history", JSON.stringify(nextHistory));
       toast.success(`Generated: ${result.title}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Could not generate outfit. Please check connection.");
+      const message =
+        err instanceof Error ? err.message : "Could not generate outfit. Please check connection.";
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -138,9 +140,9 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
 
   // Find garments chosen by the AI
   const selectedPieces = currentOutfit
-    ? currentOutfit.selectedPieceIds
+    ? (currentOutfit.selectedPieceIds
         .map((id) => items.find((i) => i.id === id))
-        .filter(Boolean) as Garment[]
+        .filter(Boolean) as Garment[])
     : [];
 
   return (
@@ -235,7 +237,9 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
       {showConfig && (
         <div className="grain-card space-y-4 rounded-2xl border border-primary/25 p-5 sm:p-6 bg-card/60 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-foreground">AI Provider Configuration</h3>
+            <h3 className="font-display text-base font-bold text-foreground">
+              AI Provider Configuration
+            </h3>
             <span className="text-xs text-muted-foreground">Free local or cloud AI keys</span>
           </div>
 
@@ -305,7 +309,8 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Detected models: {status.models.map((m) => m.name).join(", ") || "None currently detected"}
+                  Detected models:{" "}
+                  {status.models.map((m) => m.name).join(", ") || "None currently detected"}
                 </p>
               </div>
             ) : (
@@ -324,7 +329,16 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                   className="w-full rounded-xl border border-input bg-card px-3 py-2 text-xs"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Get a free key at <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="underline text-primary">aistudio.google.com</a>. Saved only in your browser.
+                  Get a free key at{" "}
+                  <a
+                    href="https://aistudio.google.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline text-primary"
+                  >
+                    aistudio.google.com
+                  </a>
+                  . Saved only in your browser.
                 </p>
               </div>
             )}
@@ -342,7 +356,8 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
             Where are you heading today?
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pick a style destination or describe your mood. The AI stylist evaluates your wardrobe palette, fit, and seasonality.
+            Pick a style destination or describe your mood. The AI stylist evaluates your wardrobe
+            palette, fit, and seasonality.
           </p>
         </div>
 
@@ -408,7 +423,13 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
             <div className="space-y-1">
               <p className="font-semibold text-[#EF5835]">Local Ollama is not connected yet</p>
               <p className="text-muted-foreground">
-                To run free local AI: open your terminal and run <code className="rounded bg-black/10 px-1.5 py-0.5 text-foreground font-mono">ollama serve</code> or launch Ollama from your desktop. You already have <code className="font-semibold text-foreground">qwen2.5:3b</code> and <code className="font-semibold text-foreground">llama3:latest</code> installed!
+                To run free local AI: open your terminal and run{" "}
+                <code className="rounded bg-black/10 px-1.5 py-0.5 text-foreground font-mono">
+                  ollama serve
+                </code>{" "}
+                or launch Ollama from your desktop. You already have{" "}
+                <code className="font-semibold text-foreground">qwen2.5:3b</code> and{" "}
+                <code className="font-semibold text-foreground">llama3:latest</code> installed!
               </p>
             </div>
           </div>
@@ -429,7 +450,9 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                   {currentOutfit.title}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Engine: {currentOutfit.modelUsed} ({currentOutfit.provider === "ollama" ? "Local Ollama" : "Cloud Gemini"}) · Calibrated for {occasion}
+                  Engine: {currentOutfit.modelUsed} (
+                  {currentOutfit.provider === "ollama" ? "Local Ollama" : "Cloud Gemini"}) ·
+                  Calibrated for {occasion}
                 </p>
               </div>
 
@@ -447,7 +470,8 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                   disabled={isGenerating}
                   className="inline-flex items-center gap-1.5 rounded-full border border-input bg-card px-4 py-2.5 text-xs sm:text-sm font-medium transition hover:bg-secondary active:scale-95"
                 >
-                  <RefreshCw className={cn("size-3.5", isGenerating && "animate-spin")} /> Another option
+                  <RefreshCw className={cn("size-3.5", isGenerating && "animate-spin")} /> Another
+                  option
                 </button>
               </div>
             </div>
@@ -543,7 +567,10 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                   </h4>
                   <ul className="space-y-2.5">
                     {currentOutfit.layeringTips.map((tip, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-muted-foreground">
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2.5 text-xs sm:text-sm text-muted-foreground"
+                      >
                         <CheckCircle2 className="size-4 text-[#199E72] shrink-0 mt-0.5" />
                         <span>{tip}</span>
                       </li>
@@ -558,7 +585,10 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                     </h4>
                     <ul className="space-y-1.5">
                       {currentOutfit.accessoryIdeas.map((acc, idx) => (
-                        <li key={idx} className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                        <li
+                          key={idx}
+                          className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2"
+                        >
                           <span className="size-1.5 rounded-full bg-accent" />
                           <span>{acc}</span>
                         </li>
@@ -644,9 +674,7 @@ export function AiStylistView({ items, season }: AiStylistViewProps) {
                     })}
                   </div>
 
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {h.whyItWorks}
-                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{h.whyItWorks}</p>
                 </div>
               );
             })}

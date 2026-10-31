@@ -42,7 +42,9 @@ function ClosetGrid() {
       {visible.length === 0 ? (
         <div className="grain-card rounded-2xl p-12 text-center">
           <h2 className="font-display text-xl font-bold text-foreground">
-            {items.length === 0 ? "Your Rewear Radar closet is empty" : "Nothing in this category yet"}
+            {items.length === 0
+              ? "Your Rewear Radar closet is empty"
+              : "Nothing in this category yet"}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             {items.length === 0

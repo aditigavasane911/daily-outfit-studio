@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   addItem,
+  useSession,
   CATEGORY_LABELS,
   COLOR_PRESETS,
   STUDIO_PALETTES,
@@ -12,6 +13,7 @@ import {
   type Formality,
   type Season,
 } from "@/lib/closet-store";
+import { isSupabaseConfigured, uploadGarmentPhoto } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/closet/add")({
@@ -26,8 +28,10 @@ const FORMALITIES: Formality[] = ["casual", "smart", "formal"];
 
 function AddPiece() {
   const navigate = useNavigate();
+  const session = useSession();
   const fileRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<string | undefined>();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>("tops");
   const [colorName, setColorName] = useState("Cream");
@@ -40,6 +44,7 @@ function AddPiece() {
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return;
+    setSelectedFile(file);
     setBusy(true);
     try {
       setPhoto(await fileToDataUrl(file));
@@ -50,12 +55,27 @@ function AddPiece() {
     }
   };
 
-  const save = () => {
+  const save = async () => {
     if (!name.trim()) {
       toast.error("Give the piece a name so you can spot it later.");
       return;
     }
-    const color = COLOR_PRESETS.find((c) => c.name === colorName)!;
+    setBusy(true);
+    let finalImageUrl = photo;
+
+    // If file selected and connected to Supabase, attempt storage upload
+    if (selectedFile && isSupabaseConfigured && session?.isSupabase) {
+      try {
+        const uploadedUrl = await uploadGarmentPhoto(selectedFile);
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+        }
+      } catch (err) {
+        console.warn("Storage upload failed, preserving local image preview:", err);
+      }
+    }
+
+    const color = COLOR_PRESETS.find((c) => c.name === colorName) || COLOR_PRESETS[0];
     const item = addItem({
       name: name.trim(),
       category,
@@ -66,8 +86,9 @@ function AddPiece() {
       fabric: fabric.trim() || undefined,
       seasons: seasons.length ? seasons : (["spring", "summer", "fall", "winter"] as Season[]),
       formality,
-      imageUrl: photo,
+      imageUrl: finalImageUrl,
     });
+    setBusy(false);
     toast.success("Added to your closet.");
     navigate({ to: "/closet/$id", params: { id: item.id } });
   };

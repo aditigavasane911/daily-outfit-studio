@@ -56,7 +56,9 @@ function ClosetLayout() {
             <span className="flex size-5 items-center justify-center rounded-md bg-primary/10 text-primary">
               <Radio className="size-3 text-accent" />
             </span>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Rewear Radar Wardrobe</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+              Rewear Radar Wardrobe
+            </p>
           </div>
           <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
             Your closet
@@ -73,11 +75,15 @@ function ClosetLayout() {
             key={label}
             className={`grain-card lift flex items-center gap-3.5 rounded-2xl p-4 sm:p-5 ${borderCls}`}
           >
-            <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${colorCls}`}>
+            <span
+              className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${colorCls}`}
+            >
               <Icon className="size-5" strokeWidth={2} />
             </span>
             <div>
-              <p className="font-display text-2xl font-bold leading-none text-foreground">{value}</p>
+              <p className="font-display text-2xl font-bold leading-none text-foreground">
+                {value}
+              </p>
               <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {label}
               </p>
