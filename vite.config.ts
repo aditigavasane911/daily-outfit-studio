@@ -23,6 +23,10 @@ export default defineConfig(({ command }) => ({
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api\/ollama/, ""),
       },
+      "/api": {
+        target: (process.env["BACKEND_URL"] as string | undefined) || "http://127.0.0.1:5000",
+        changeOrigin: true,
+      },
     },
   },
 }));

@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Garment, Profile } from "./closet-store";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabaseUrl = (import.meta.env["VITE_SUPABASE_URL"] as string | undefined) || "";
+const supabaseAnonKey = (import.meta.env["VITE_SUPABASE_ANON_KEY"] as string | undefined) || "";
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
@@ -61,9 +61,7 @@ export async function signInWithGoogle() {
   const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/closet` : undefined;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: {
-      redirectTo,
-    },
+    ...(redirectTo ? { options: { redirectTo } } : {}),
   });
   if (error) throw error;
   return data;
@@ -267,11 +265,11 @@ export async function updateDbProfile(profile: Partial<Profile>): Promise<void> 
     id: user.id,
     updated_at: new Date().toISOString(),
   };
-  if (profile.name !== undefined) payload.name = profile.name;
-  if (profile.sizes !== undefined) payload.sizes = profile.sizes;
-  if (profile.favoriteColors !== undefined) payload.favorite_colors = profile.favoriteColors;
-  if (profile.budget !== undefined) payload.budget = profile.budget;
-  if (profile.styleNote !== undefined) payload.style_note = profile.styleNote;
+  if (profile.name !== undefined) payload["name"] = profile.name;
+  if (profile.sizes !== undefined) payload["sizes"] = profile.sizes;
+  if (profile.favoriteColors !== undefined) payload["favorite_colors"] = profile.favoriteColors;
+  if (profile.budget !== undefined) payload["budget"] = profile.budget;
+  if (profile.styleNote !== undefined) payload["style_note"] = profile.styleNote;
 
   const { error } = await supabase
     .from("profiles")

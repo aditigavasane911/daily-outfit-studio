@@ -75,7 +75,8 @@ function AddPiece() {
       }
     }
 
-    const color = COLOR_PRESETS.find((c) => c.name === colorName) || COLOR_PRESETS[0];
+    const fallbackColor = COLOR_PRESETS[0] ?? { name: "Midnight Spruce", hex: "#165B6D" };
+    const color = COLOR_PRESETS.find((c) => c.name === colorName) ?? fallbackColor;
     const item = addItem({
       name: name.trim(),
       category,

@@ -18,6 +18,17 @@ import {
   deleteDbOutfit,
   hasActiveSupabaseAuth,
 } from "./supabase";
+import {
+  fetchGarmentsApi,
+  createGarmentApi,
+  deleteGarmentApi,
+  toggleFavoriteGarmentApi,
+  fetchProfileApi,
+  updateProfileApi,
+  fetchSavedOutfitsApi,
+  saveOutfitApi,
+  deleteSavedOutfitApi,
+} from "@/api";
 
 /* ---------------- Types ---------------- */
 
@@ -500,28 +511,40 @@ export function addItem(input: Omit<Garment, "id" | "favorite" | "createdAt">): 
   };
   setItems([garment, ...getItems()]);
 
-  // If connected to Supabase and authenticated, persist to PostgreSQL
-  if (isSupabaseConfigured && session?.isSupabase) {
-    insertDbGarment(input)
-      .then((createdDbGarment) => {
-        // Swap temp ID with the PostgreSQL UUID
-        items = getItems().map((g) => (g.id === tempId ? createdDbGarment : g));
-        save(ITEMS_KEY, items);
-        listeners.forEach((l) => l());
-      })
-      .catch((err) => {
-        console.error("Failed to persist garment to Supabase PostgreSQL:", err);
-      });
-  }
+  // 1. Try Backend API first (PostgreSQL)
+  createGarmentApi(input)
+    .then((created) => {
+      items = getItems().map((g) => (g.id === tempId ? created : g));
+      save(ITEMS_KEY, items);
+      listeners.forEach((l) => l());
+    })
+    .catch(() => {
+      // 2. Fallback to Supabase direct client if configured
+      if (isSupabaseConfigured && session?.isSupabase) {
+        insertDbGarment(input)
+          .then((createdDbGarment) => {
+            items = getItems().map((g) => (g.id === tempId ? createdDbGarment : g));
+            save(ITEMS_KEY, items);
+            listeners.forEach((l) => l());
+          })
+          .catch((err) => {
+            console.error("Failed to persist garment to Supabase PostgreSQL:", err);
+          });
+      }
+    });
 
   return garment;
 }
 
 export function removeItem(id: string) {
   setItems(getItems().filter((g) => g.id !== id));
-  if (isSupabaseConfigured && session?.isSupabase && !id.startsWith("seed-")) {
-    deleteDbGarment(id).catch((err) => {
-      console.error("Failed to delete garment from Supabase PostgreSQL:", err);
+  if (!id.startsWith("seed-")) {
+    deleteGarmentApi(id).catch(() => {
+      if (isSupabaseConfigured && session?.isSupabase) {
+        deleteDbGarment(id).catch((err) => {
+          console.error("Failed to delete garment from Supabase PostgreSQL:", err);
+        });
+      }
     });
   }
 }
@@ -530,9 +553,13 @@ export function toggleFavorite(id: string) {
   const current = getItems().find((g) => g.id === id);
   const nextFav = current ? !current.favorite : false;
   setItems(getItems().map((g) => (g.id === id ? { ...g, favorite: !g.favorite } : g)));
-  if (isSupabaseConfigured && session?.isSupabase && !id.startsWith("seed-")) {
-    updateDbGarmentFavorite(id, nextFav).catch((err) => {
-      console.error("Failed to update favorite in Supabase PostgreSQL:", err);
+  if (!id.startsWith("seed-")) {
+    toggleFavoriteGarmentApi(id, nextFav).catch(() => {
+      if (isSupabaseConfigured && session?.isSupabase) {
+        updateDbGarmentFavorite(id, nextFav).catch((err) => {
+          console.error("Failed to update favorite in Supabase PostgreSQL:", err);
+        });
+      }
     });
   }
 }
@@ -573,11 +600,14 @@ export function updateProfile(patch: Partial<Profile>) {
   profile = { ...getProfile(), ...patch };
   save(PROFILE_KEY, profile);
   profileListeners.forEach((l) => l());
-  if (isSupabaseConfigured && session?.isSupabase) {
-    updateDbProfile(patch).catch((err) => {
-      console.error("Failed to update profile in Supabase PostgreSQL:", err);
-    });
-  }
+
+  updateProfileApi(patch).catch(() => {
+    if (isSupabaseConfigured && session?.isSupabase) {
+      updateDbProfile(patch).catch((err) => {
+        console.error("Failed to update profile in Supabase PostgreSQL:", err);
+      });
+    }
+  });
 }
 
 export function subscribeProfile(listener: () => void) {
@@ -594,8 +624,8 @@ export function useProfile(): Profile {
 export interface Session {
   email: string;
   name: string;
-  id?: string;
-  isSupabase?: boolean;
+  id?: string | undefined;
+  isSupabase?: boolean | undefined;
 }
 
 let session: Session | null | undefined;
@@ -707,11 +737,16 @@ export async function toggleSaveOutfit(outfit: Outfit): Promise<boolean> {
   if (existing) {
     // Remove from saved
     setSavedOutfits(current.filter((s) => s.id !== existing.id));
-    if (isSupabaseConfigured && session?.isSupabase && !existing.id.startsWith("local-")) {
-      deleteDbOutfit(existing.id).catch((err) => {
-        console.error("Failed to delete saved outfit in Supabase:", err);
-      });
-    }
+
+    // Delete from backend API
+    deleteSavedOutfitApi(existing.id).catch(() => {
+      if (isSupabaseConfigured && session?.isSupabase && !existing.id.startsWith("local-")) {
+        deleteDbOutfit(existing.id).catch((err) => {
+          console.error("Failed to delete saved outfit in Supabase:", err);
+        });
+      }
+    });
+
     return false; // Now unsaved
   } else {
     // Save outfit
@@ -726,23 +761,42 @@ export async function toggleSaveOutfit(outfit: Outfit): Promise<boolean> {
     };
     setSavedOutfits([newSaved, ...current]);
 
-    if (isSupabaseConfigured && session?.isSupabase) {
-      try {
-        const dbResult = await saveDbOutfit({
-          score: outfit.score,
-          reasons: outfit.reasons,
-          matchedPaletteId: outfit.matchedPalette?.id,
-          pieceIds: outfit.pieces.map((p) => p.id),
-        });
+    // 1. Try Backend API first
+    saveOutfitApi({
+      score: outfit.score,
+      reasons: outfit.reasons,
+      matchedPaletteId: outfit.matchedPalette?.id ?? null,
+      pieceIds: outfit.pieces.map((p) => p.id),
+    })
+      .then((saved) => {
         setSavedOutfits(
-          getSavedOutfits().map((s) =>
-            s.id === tempId ? { ...s, id: dbResult.id } : s,
-          ),
+          getSavedOutfits().map((s) => (s.id === tempId ? { ...s, id: saved.id } : s)),
         );
-      } catch (err) {
-        console.error("Failed to persist outfit to Supabase:", err);
-      }
-    }
+      })
+      .catch(() => {
+        // 2. Fallback to direct Supabase client if configured
+        if (isSupabaseConfigured && session?.isSupabase) {
+          saveDbOutfit({
+            score: outfit.score,
+            reasons: outfit.reasons,
+            ...(outfit.matchedPalette?.id !== undefined
+              ? { matchedPaletteId: outfit.matchedPalette.id }
+              : {}),
+            pieceIds: outfit.pieces.map((p) => p.id),
+          })
+            .then((dbResult) => {
+              setSavedOutfits(
+                getSavedOutfits().map((s) =>
+                  s.id === tempId ? { ...s, id: dbResult.id } : s,
+                ),
+              );
+            })
+            .catch((err) => {
+              console.error("Failed to persist outfit to Supabase:", err);
+            });
+        }
+      });
+
     return true; // Now saved
   }
 }
@@ -753,13 +807,48 @@ export function isOutfitSaved(outfitId: string, pieceIds?: string[]): boolean {
   return current.some((s) => s.id === outfitId || s.pieceIds.join("+") === piecesKey);
 }
 
-/* ---------------- Supabase Real-time / Auth Sync ---------------- */
+/* ---------------- Backend & Supabase Real-time Sync ---------------- */
 
 let hasInitializedSync = false;
 
+export async function syncWithBackend() {
+  try {
+    const [remoteGarments, remoteProfile, remoteOutfits] = await Promise.allSettled([
+      fetchGarmentsApi(),
+      fetchProfileApi(),
+      fetchSavedOutfitsApi(),
+    ]);
+
+    if (remoteGarments.status === "fulfilled" && Array.isArray(remoteGarments.value) && remoteGarments.value.length > 0) {
+      const dbIds = new Set(remoteGarments.value.map((g) => g.id));
+      const preservedDemos = SEED_ITEMS.filter((s) => !dbIds.has(s.id));
+      items = [...remoteGarments.value, ...preservedDemos];
+      save(ITEMS_KEY, items);
+      listeners.forEach((l) => l());
+    }
+
+    if (remoteProfile.status === "fulfilled" && remoteProfile.value) {
+      profile = { ...DEFAULT_PROFILE, ...remoteProfile.value };
+      save(PROFILE_KEY, profile);
+      profileListeners.forEach((l) => l());
+    }
+
+    if (remoteOutfits.status === "fulfilled" && Array.isArray(remoteOutfits.value) && remoteOutfits.value.length > 0) {
+      setSavedOutfits(remoteOutfits.value);
+    }
+  } catch (err) {
+    // Backend offline or running purely in demo mode
+  }
+}
+
 export function initSupabaseSync() {
-  if (hasInitializedSync || typeof window === "undefined" || !isSupabaseConfigured) return;
+  if (hasInitializedSync || typeof window === "undefined") return;
   hasInitializedSync = true;
+
+  // Sync with backend API
+  syncWithBackend().catch(() => {});
+
+  if (!isSupabaseConfigured) return;
 
   supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
     if (currentSession?.user) {
@@ -785,9 +874,10 @@ export function initSupabaseSync() {
 
 async function handleUserSession(user: { id: string; email?: string; user_metadata?: Record<string, any> }) {
   const email = user.email || "";
+  const meta = user.user_metadata;
   const name =
-    (user.user_metadata?.full_name as string) ||
-    (user.user_metadata?.name as string) ||
+    (meta?.["full_name"] as string) ||
+    (meta?.["name"] as string) ||
     email.split("@")[0] ||
     "Stylist";
 

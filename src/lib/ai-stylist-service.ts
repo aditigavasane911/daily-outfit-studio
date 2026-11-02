@@ -133,11 +133,33 @@ export interface GenerateOutfitParams {
 }
 
 /**
- * Main AI outfit generator supporting Ollama and optional Gemini
+ * Main AI outfit generator supporting Backend API, Ollama, and optional Gemini
  */
 export async function generateAiOutfit(
   params: GenerateOutfitParams,
 ): Promise<AiOutfitRecommendation> {
+  // 1. Attempt backend recommendation endpoint
+  try {
+    const res = await fetch("/api/ai/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        occasion: params.occasion,
+        season: params.season,
+        customPrompt: params.customPrompt,
+      }),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as AiOutfitRecommendation;
+      if (data && data.selectedPieceIds && data.selectedPieceIds.length > 0) {
+        return data;
+      }
+    }
+  } catch {
+    // Backend unavailable or offline, continue to client generation
+  }
+
+  // 2. Client-side generation fallback
   const settings = params.settings || loadAiSettings();
 
   if (settings.provider === "gemini" && settings.geminiApiKey?.trim()) {
